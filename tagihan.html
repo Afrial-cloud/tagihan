@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kirim Tagihan Wifi - MyWifi</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #25D366;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #128C7E;
+            font-size: 1.3em;
+            border-bottom: 2px solid #25D366;
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        button {
+            background-color: #25D366;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #128C7E;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            margin-top: 10px;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .customer-list {
+            margin-top: 30px;
+        }
+        .customer-item {
+            background: #f9f9f9;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #25D366;
+            position: relative;
+        }
+        .delete-customer {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .template-preview {
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            border: 1px dashed #25D366;
+        }
+        .import-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        .success-message {
+            color: #25D366;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+        .add-customer-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        .tab-container {
+            margin-top: 20px;
+        }
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        .tab-button {
+            padding: 10px 20px;
+            background: #e9ecef;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .tab-button.active {
+            background: #25D366;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Kirim Tagihan Wifi via WhatsApp</h1>
+        
+        <div class="form-group">
+            <label for="template">Template Pesan Tagihan:</label>
+            <textarea id="template" placeholder="Contoh: 
+Yth. Pelanggan MyWifi {nama},
+Tagihan wifi bulan {bulan} sebesar Rp {jumlah} jatuh tempo pada {tanggal}.
+Silakan transfer ke:
+Bank: BCA
+No.Rek: 1234567890
+a.n: MyWifi
+
+Terima kasih."></textarea>
+            <div class="template-preview">
+                <strong>Preview:</strong>
+                <div id="templatePreview"></div>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="bulan">Bulan Tagihan:</label>
+                <input type="text" id="bulan" placeholder="Contoh: Juli 2023">
+            </div>
+            
+            <div class="form-group">
+                <label for="tanggal">Tanggal Jatuh Tempo:</label>
+                <input type="text" id="tanggal" placeholder="Contoh: 10 Juli 2023">
+            </div>
+        </div>
+        
+        <div class="import-section">
+            <h2>Kelola Data Pelanggan</h2>
+            
+            <div class="tab-container">
+                <div class="tab-buttons">
+                    <button class="tab-button active" onclick="openTab('manualTab')">Input Manual</button>
+                    <button class="tab-button" onclick="openTab('importTab')">Import CSV</button>
+                </div>
+                
+                <div id="manualTab" class="tab-content active">
+                    <div class="add-customer-form">
+                        <h3>Tambah Pelanggan Baru</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="customerName">Nama Pelanggan</label>
+                                <input type="text" id="customerName" placeholder="Nama lengkap">
+                            </div>
+                            <div class="form-group">
+                                <label for="customerPhone">Nomor WhatsApp</label>
+                                <input type="text" id="customerPhone" placeholder="6281234567890">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="customerBill">Jumlah Tagihan</label>
+                            <input type="text" id="customerBill" placeholder="350000">
+                        </div>
+                        <button id="addCustomerBtn">Tambah Pelanggan</button>
+                    </div>
+                </div>
+                
+                <div id="importTab" class="tab-content">
+                    <div class="form-group">
+                        <label for="importData">Import Data Pelanggan (CSV):</label>
+                        <input type="file" id="importData" accept=".csv">
+                        <small>Format CSV: nama, nomor WhatsApp, jumlah tagihan</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="customer-list" id="customerList">
+                <!-- Daftar pelanggan akan muncul di sini -->
+                <p>Belum ada data pelanggan. Silakan tambahkan pelanggan secara manual atau import file CSV.</p>
+            </div>
+        </div>
+        
+        <button id="sendAllBtn">Kirim Semua Tagihan via WhatsApp</button>
+        <button id="exportBtn" class="btn-secondary">Ekspor Data Pelanggan ke CSV</button>
+        <button id="clearAllBtn" class="btn-secondary">Hapus Semua Pelanggan</button>
+        <div class="success-message" id="successMessage">
+            Tagihan berhasil dikirim ke semua pelanggan!
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let customers = [];
+            
+            // Update template preview
+            document.getElementById('template').addEventListener('input', updatePreview);
+            document.getElementById('bulan').addEventListener('input', updatePreview);
+            document.getElementById('tanggal').addEventListener('input', updatePreview);
+            
+            // Import CSV
+            document.getElementById('importData').addEventListener('change', handleFileImport);
+            
+            // Add customer
+            document.getElementById('addCustomerBtn').addEventListener('click', addCustomer);
+            
+            // Send all messages
+            document.getElementById('sendAllBtn').addEventListener('click', sendAllMessages);
+            
+            // Export CSV
+            document.getElementById('exportBtn').addEventListener('click', exportToCSV);
+            
+            // Clear all
+            document.getElementById('clearAllBtn').addEventListener('click', clearAllCustomers);
+            
+            function updatePreview() {
+                const template = document.getElementById('template').value;
+                const bulan = document.getElementById('bulan').value;
+                const tanggal = document.getElementById('tanggal').value;
+                
+                let preview = template
+                    .replace(/{nama}/g, 'John Doe')
+                    .replace(/{bulan}/g, bulan || '[bulan]')
+                    .replace(/{tanggal}/g, tanggal || '[tanggal]')
+                    .replace(/{jumlah}/g, '350000');
+                
+                document.getElementById('templatePreview').innerHTML = preview.replace(/\n/g, '<br>');
+            }
+            
+            function handleFileImport(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const contents = e.target.result;
+                    processCSV(contents);
+                };
+                reader.readAsText(file);
+            }
+            
+            function processCSV(csv) {
+                const lines = csv.split('\n');
+                const newCustomers = [];
+                
+                lines.forEach((line, index) => {
+                    if (index === 0 || line.trim() === '') return; // Skip header or empty lines
+                    
+                    const [nama, nomor, jumlah] = line.split(',');
+                    if (!nama || !nomor || !jumlah) return;
+                    
+                    newCustomers.push({
+                        nama: nama.trim(),
+                        nomor: nomor.trim(),
+                        jumlah: jumlah.trim()
+                    });
+                });
+                
+                if (newCustomers.length > 0) {
+                    customers = [...customers, ...newCustomers];
+                    renderCustomerList();
+                    alert(`Berhasil menambahkan ${newCustomers.length} pelanggan dari file CSV!`);
+                } else {
+                    alert('Tidak ada data pelanggan yang valid dalam file CSV.');
+                }
+            }
+            
+            function addCustomer() {
+                const name = document.getElementById('customerName').value.trim();
+                const phone = document.getElementById('customerPhone').value.trim();
+                const bill = document.getElementById('customerBill').value.trim();
+                
+                if (!name || !phone || !bill) {
+                    alert('Harap isi semua data pelanggan!');
+                    return;
+                }
+                
+                if (!phone.startsWith('62')) {
+                    alert('Nomor WhatsApp harus dimulai dengan 62 (kode negara Indonesia)');
+                    return;
+                }
+                
+                customers.push({
+                    nama: name,
+                    nomor: phone,
+                    jumlah: bill
+                });
+                
+                renderCustomerList();
+                
+                // Clear form
+                document.getElementById('customerName').value = '';
+                document.getElementById('customerPhone').value = '';
+                document.getElementById('customerBill').value = '';
+                
+                // Focus kembali ke nama
+                document.getElementById('customerName').focus();
+            }
+            
+            function renderCustomerList() {
+                const customerList = document.getElementById('customerList');
+                
+                if (customers.length === 0) {
+                    customerList.innerHTML = '<p>Belum ada data pelanggan. Silakan tambahkan pelanggan secara manual atau import file CSV.</p>';
+                    return;
+                }
+                
+                customerList.innerHTML = `
+                    <p>Total ${customers.length} pelanggan:</p>
+                    ${customers.map((customer, index) => `
+                        <div class="customer-item">
+                            <button class="delete-customer" onclick="deleteCustomer(${index})">×</button>
+                            <strong>${customer.nama}</strong><br>
+                            Nomor: ${customer.nomor}<br>
+                            Tagihan: Rp ${customer.jumlah}
+                        </div>
+                    `).join('')}
+                `;
+            }
+            
+            function deleteCustomer(index) {
+                if (confirm(`Hapus pelanggan ${customers[index].nama}?`)) {
+                    customers.splice(index, 1);
+                    renderCustomerList();
+                }
+            }
+            
+            function clearAllCustomers() {
+                if (customers.length === 0) return;
+                
+                if (confirm(`Apakah Anda yakin ingin menghapus semua ${customers.length} pelanggan?`)) {
+                    customers = [];
+                    renderCustomerList();
+                }
+            }
+            
+            function sendAllMessages() {
+                if (customers.length === 0) {
+                    alert('Tidak ada pelanggan untuk dikirimi tagihan!');
+                    return;
+                }
+                
+                const template = document.getElementById('template').value;
+                const bulan = document.getElementById('bulan').value;
+                const tanggal = document.getElementById('tanggal').value;
+                
+                if (!template || !bulan || !tanggal) {
+                    alert('Harap lengkapi template, bulan, dan tanggal jatuh tempo!');
+                    return;
+                }
+                
+                // Konfirmasi sebelum kirim
+                if (!confirm(`Anda akan mengirim tagihan ke ${customers.length} pelanggan. Lanjutkan?`)) {
+                    return;
+                }
+                
+                customers.forEach(customer => {
+                    const message = template
+                        .replace(/{nama}/g, customer.nama)
+                        .replace(/{bulan}/g, bulan)
+                        .replace(/{tanggal}/g, tanggal)
+                        .replace(/{jumlah}/g, customer.jumlah);
+                    
+                    const whatsappUrl = `https://wa.me/${customer.nomor}?text=${encodeURIComponent(message)}`;
+                    window.open(whatsappUrl, '_blank');
+                });
+                
+                // Show success message
+                document.getElementById('successMessage').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('successMessage').style.display = 'none';
+                }, 5000);
+            }
+            
+            function exportToCSV() {
+                if (customers.length === 0) {
+                    alert('Tidak ada data pelanggan untuk diekspor!');
+                    return;
+                }
+                
+                let csv = 'nama, nomor WhatsApp, jumlah tagihan\n';
+                customers.forEach(customer => {
+                    csv += `${customer.nama},${customer.nomor},${customer.jumlah}\n`;
+                });
+                
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'pelanggan_wifi.csv');
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+            
+            function openTab(tabId) {
+                // Hide all tab contents
+                document.querySelectorAll('.tab-content').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                
+                // Deactivate all tab buttons
+                document.querySelectorAll('.tab-button').forEach(button => {
+                    button.classList.remove('active');
+                });
+                
+                // Activate selected tab
+                document.getElementById(tabId).classList.add('active');
+                event.currentTarget.classList.add('active');
+            }
+            
+            // Make deleteCustomer available globally
+            window.deleteCustomer = deleteCustomer;
+            
+            // Initial preview update
+            updatePreview();
+        });
+    </script>
+</body>
+</html>
